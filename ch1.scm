@@ -1,5 +1,7 @@
 ;;;;CODE FROM CHAPTER 1 OF STRUCTURE AND INTERPRETATION OF COMPUTER PROGRAMS
 
+;;; https://mitpress.mit.edu/sicp/code/ch1.scm
+
 ;;; Examples from the book are commented out with ;: so that they
 ;;;  are easy to find and so that they will be omitted if you evaluate a
 ;;;  chunk of the file (programs with intervening examples) in Scheme.
@@ -117,42 +119,67 @@
 
 
 ;;EXERCISE 1.1
-;: 10
+10
 
-;: (+ 5 3 4)
+(+ 5 3 4)
 
-;: (- 9 1)
+(- 9 1)
 
-;: (/ 6 2)
+(/ 6 2)
 
-;: (+ (* 2 4) (- 4 6))
+(+ (* 2 4) (- 4 6))
 
-;: (define a 3)
+(define a 3)
 
-;: (define b (+ a 1))
+(define b (+ a 1))
 
-;: (+ a b (* a b))
+(+ a b (* a b))
 
-;: (= a b)
+(= a b)
 
-;: (if (and (> b a) (< b (* a b)))
-;:     b
-;:     a)
+(if (and (> b a) (< b (* a b)))
+    b
+    a)
 
-;: (cond ((= a 4) 6)
-;:       ((= b 4) (+ 6 7 a))
-;:       (else 25))
+(cond ((= a 4) 6)
+      ((= b 4) (+ 6 7 a))
+      (else 25))
 
-;: (+ 2 (if (> b a) b a))
+(+ 2 (if (> b a) b a))
 
-;: (* (cond ((> a b) a)
-;: 	 ((< a b) b)
-;: 	 (else -1))
-;:    (+ a 1))
+(* (cond ((> a b) a)
+	 ((< a b) b)
+	 (else -1))
+   (+ a 1))
+
+;;EXERCISE 1.2
+(/ (+ 5 4 (- 2 (- 3 (+ 6 (/ 4 5)))))
+   (* 3 (- 6 2) (- 2 7)))
+
+;;EXERCISE 1.3
+; "Define a procedure that takes three numbers as arguments and
+; returns the sum of the squares of the two larger numbers."
+;
+; For a challenge, I'm pretending I don't know about (let ...))
+; Simple algorithm: conditionally omit the smallest number.
+(define (sum-larger-two-squares a b c)
+  (cond ((and (< a b) (< a c)) (+ (* b b) (* c c)))
+	((and (< b c) (< b a)) (+ (* c c) (* a a)))
+	((and (< c a) (< c b)) (+ (* a a) (* b b)))))
+
 
 ;;EXERCISE 1.4
+; "describe the behavior of the following procedure"
 (define (a-plus-abs-b a b)
   ((if (> b 0) + -) a b))
+
+; Answer:
+; consider (a-plus-abs-b 3 -5)
+; -> ((if (> b 0) + -) a b)
+; -> ((if (> -5 0) + -) 3 -5)
+; -> ((if #f + -) 3 -5)
+; -> (- 3 -5)
+; -> 8
 
 ;;EXERCISE 1.5
 (define (p) (p))
@@ -163,6 +190,22 @@
       y))
 
 ;: (test 0 (p))
+
+; "What behavior will Ben observe ... ?"
+; Answer:
+; In a normal-order interpreter, operands are not evaluated until
+; their values are needed.  So we would have:
+; (test 0 (p))
+; -> (if (= x 0) 0 y)
+; -> (if (= 0 0) 0 (p))
+; -> (if #t 0 (p))
+; -> 0
+; In an applicitaive-order interpreter, operators and operands
+; are evaluated and "substituted" as they are encountered:
+; (test 0 (p))
+; -> (test 0 #!!hangs!!)
+;; Never calls test.  Hangs because (p) causes an infinite loop.
+
 
 
 ;;;SECTION 1.1.7
@@ -207,6 +250,54 @@
           (sqrt-iter (improve guess x)
                      x)))
 
+; What happens when Alyssa attempts to use [new-if]
+; to compute square roots?
+; Answer: the else-clause paramter is evaluated *before* calling the
+; new-if function, causing it to recuse into sqrt-iter without limit,
+; until it aborts with "maximum recursion depth exceeded"
+
+;;EXERCISE 1.7
+; "An alternative strategy for implementing good-enough? is to
+; watch how guess changes from one iteration to the next and to
+; stop when the change is a very small fraction of the guess.
+; Design a square-root procedure that uses this kind of end test."
+
+; Blows up if new-guess is 0
+(define (new-good-enough? new-guess old-guess)
+  (< (abs (/ (- new-guess old-guess) new-guess))
+     0.01))
+
+(define (new-sqrt-iter new-guess old-guess x)
+  (if (new-good-enough? new-guess old-guess)
+      new-guess
+      (new-sqrt-iter (improve new-guess x)
+		     new-guess
+		     x)))
+
+(define (new-sqrt x)
+  (new-sqrt-iter 1.0 x x))
+
+;;EXERCISE 1.8
+; "implement a cube-root procedure analogous to the square-root procedure"
+
+(define (improve-cube-root guess x)
+  (/
+   (+ (/ x (* guess guess))
+      (* 2 guess))
+   3))
+
+(define (cube-root-iter guess x)
+  (if (cube-root-good-enough? guess x)
+      guess
+      (cube-root-iter (improve-cube-root guess x)
+		      x)))
+
+(define (cube-root-good-enough? guess x)
+  (< (abs (- (* guess guess guess) x)) 0.001))
+
+(define (cube-root x)
+  (cube-root-iter 1.0 x))
+  
 
 ;;;SECTION 1.1.8
 
